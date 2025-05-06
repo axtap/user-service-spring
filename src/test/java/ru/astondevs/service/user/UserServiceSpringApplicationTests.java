@@ -1,4 +1,4 @@
-package ru.astondevs.user_service_spring;
+package ru.astondevs.service.user;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
