@@ -2,9 +2,12 @@ package ru.astondevs.service.user.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import ru.astondevs.service.user.dto.UserDto;
 import ru.astondevs.service.user.entity.UserEntity;
+import ru.astondevs.service.user.event.UserEvent;
+import ru.astondevs.service.user.event.UserEventType;
 import ru.astondevs.service.user.mapper.UserMapper;
 import ru.astondevs.service.user.repository.UserRepository;
 
@@ -16,6 +19,7 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final KafkaTemplate<String, UserEvent> kafkaTemplate;
 
     public UserDto findById(Long id) {
         return userRepository.findById(id)
@@ -26,6 +30,15 @@ public class UserService {
     public UserDto create(UserDto userDto) {
         UserEntity userEntity = userMapper.toEntity(userDto);
         UserEntity savedUserEntity = userRepository.save(userEntity);
+
+        // Отправка события в Kafka
+        kafkaTemplate.send("user-events",
+            UserEvent.builder()
+                    .type(UserEventType.CREATED)
+                    .email(savedUserEntity.getEmail())
+                    .build());
+
+
         return userMapper.toDto(savedUserEntity);
     }
 
@@ -42,7 +55,16 @@ public class UserService {
     }
 
     public void delete(Long id) {
+        UserEntity user = userRepository.findById(id)
+                        .orElseThrow(() -> new EntityNotFoundException("User not found"));
         userRepository.deleteById(id);
+
+        // Отправка события в Kafka
+        kafkaTemplate.send("user-events",
+                UserEvent.builder()
+                        .type(UserEventType.DELETED)
+                        .email(user.getEmail())
+                        .build());
     }
 
     public List<UserDto> findAll() {
