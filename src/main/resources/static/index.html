@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Service Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+<h1>User Service Tester</h1>
+
+<div class="section">
+    <h2>Create User</h2>
+    <form id="createForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" required>
+
+        <label for="age">Age:</label>
+        <input type="number" id="age" required>
+
+        <button type="submit">Create User</button>
+    </form>
+    <pre id="createResult"></pre>
+</div>
+
+<div class="section">
+    <h2>Get User by ID</h2>
+    <form id="getForm">
+        <label for="userId">User ID:</label>
+        <input type="number" id="userId" required>
+        <button type="submit">Get User</button>
+    </form>
+    <pre id="getResult"></pre>
+</div>
+
+<div class="section">
+    <h2>Get All Users</h2>
+    <button id="getAllBtn">Get All Users</button>
+    <pre id="getAllResult"></pre>
+</div>
+
+<div class="section">
+    <h2>Update User</h2>
+    <form id="updateForm">
+        <label for="updateId">User ID:</label>
+        <input type="number" id="updateId" required>
+
+        <label for="updateName">Name:</label>
+        <input type="text" id="updateName" required>
+
+        <label for="updateEmail">Email:</label>
+        <input type="email" id="updateEmail" required>
+
+        <label for="updateAge">Age:</label>
+        <input type="number" id="updateAge" required>
+
+        <button type="submit">Update User</button>
+    </form>
+    <pre id="updateResult"></pre>
+</div>
+
+<div class="section">
+    <h2>Delete User</h2>
+    <form id="deleteForm">
+        <label for="deleteId">User ID:</label>
+        <input type="number" id="deleteId" required>
+        <button type="submit">Delete User</button>
+    </form>
+    <pre id="deleteResult"></pre>
+</div>
+
+<script>
+    const API_BASE_URL = 'http://localhost:8080/api/users';
+
+    // Create User
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user = {
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            age: parseInt(document.getElementById('age').value)
+        };
+
+        try {
+            const response = await fetch(API_BASE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(user)
+            });
+            const result = await response.json();
+            document.getElementById('createResult').textContent = JSON.stringify(result, null, 2);
+        } catch (error) {
+            document.getElementById('createResult').textContent = 'Error: ' + error.message;
+        }
+    });
+
+    // Get User by ID
+    document.getElementById('getForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userId = document.getElementById('userId').value;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/${userId}`);
+            if (!response.ok) throw new Error('User not found');
+            const result = await response.json();
+            document.getElementById('getResult').textContent = JSON.stringify(result, null, 2);
+        } catch (error) {
+            document.getElementById('getResult').textContent = 'Error: ' + error.message;
+        }
+    });
+
+    // Get All Users
+    document.getElementById('getAllBtn').addEventListener('click', async () => {
+        try {
+            const response = await fetch(API_BASE_URL);
+            const result = await response.json();
+            document.getElementById('getAllResult').textContent = JSON.stringify(result, null, 2);
+        } catch (error) {
+            document.getElementById('getAllResult').textContent = 'Error: ' + error.message;
+        }
+    });
+
+    // Update User
+    document.getElementById('updateForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userId = document.getElementById('updateId').value;
+        const user = {
+            name: document.getElementById('updateName').value,
+            email: document.getElementById('updateEmail').value,
+            age: parseInt(document.getElementById('updateAge').value)
+        };
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(user)
+            });
+            const result = await response.json();
+            document.getElementById('updateResult').textContent = JSON.stringify(result, null, 2);
+        } catch (error) {
+            document.getElementById('updateResult').textContent = 'Error: ' + error.message;
+        }
+    });
+
+    // Delete User
+    document.getElementById('deleteForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userId = document.getElementById('deleteId').value;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/${userId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                document.getElementById('deleteResult').textContent = 'User deleted successfully';
+            } else {
+                throw new Error('Failed to delete user');
+            }
+        } catch (error) {
+            document.getElementById('deleteResult').textContent = 'Error: ' + error.message;
+        }
+    });
+</script>
+</body>
+</html>
