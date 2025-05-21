@@ -12,7 +12,6 @@ import ru.astondevs.service.user.dto.UserDto;
 import ru.astondevs.service.user.hateoas.UserModelAssembler;
 import ru.astondevs.service.user.service.UserService;
 
-import javax.swing.text.html.parser.Entity;
 import java.util.List;
 import java.util.stream.Collectors;
 
