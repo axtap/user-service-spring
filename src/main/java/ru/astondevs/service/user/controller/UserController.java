@@ -4,12 +4,20 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.astondevs.service.user.dto.UserDto;
+import ru.astondevs.service.user.hateoas.UserModelAssembler;
 import ru.astondevs.service.user.service.UserService;
 
+import javax.swing.text.html.parser.Entity;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("api/users")
@@ -18,32 +26,36 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final UserModelAssembler userModelAssembler;
 
     @Operation(summary = "Получить пользователя по ID", description = "Возвращает информацию о пользователе по его уникальному идентификатору")
     @GetMapping("/{id}")
-    public UserDto findById(
+    public EntityModel<UserDto> findById(
             @Parameter(description = "ID пользователя", example = "1")
             @PathVariable Long id) {
-        return userService.findById(id);
+        UserDto userDto = userService.findById(id);
+        return userModelAssembler.toModel(userDto);
     }
 
     @Operation(summary = "Создать пользователя", description = "Создаёт нового пользователя и возвращает его данные")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto create(
+    public EntityModel<UserDto> create(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Данные нового пользователя")
             @RequestBody UserDto userDto) {
-        return userService.create(userDto);
+        UserDto created = userService.create(userDto);
+        return userModelAssembler.toModel(created);
     }
 
     @Operation(summary = "Обновить пользователя", description = "Обновляет данные существующего пользователя по ID")
     @PutMapping("/{id}")
-    public UserDto update(
+    public EntityModel<UserDto> update(
             @Parameter(description = "ID пользователя для обновления", example = "1")
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Обновлённые данные пользователя")
             @PathVariable Long id,
             @RequestBody UserDto userDto) {
-        return userService.update(id, userDto);
+        UserDto updated = userService.update(id, userDto);
+        return userModelAssembler.toModel(updated);
     }
 
     @Operation(summary = "Удалить пользователя", description = "Удаляет пользователя по его идентификатору")
@@ -57,7 +69,12 @@ public class UserController {
 
     @Operation(summary = "Получить список всех пользователей", description = "Возвращает список всех пользователей в системе")
     @GetMapping
-    public List<UserDto> findAll() {
-        return userService.findAll();
+    public CollectionModel<EntityModel<UserDto>> findAll() {
+        List<EntityModel<UserDto>> users = userService.findAll().stream()
+                .map(userModelAssembler::toModel)
+                .collect(Collectors.toList());
+
+        return CollectionModel.of(users,
+                linkTo(methodOn(UserController.class).findAll()).withSelfRel());
     }
 }
